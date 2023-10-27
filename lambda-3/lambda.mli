@@ -23,6 +23,9 @@ type term =
   | TmLetIn of string * term * term
 ;;
 
+type command =
+  | Eval of term
+
 val emptyctx : context;;
 val addbinding : context -> string -> ty -> context;;
 val getbinding : context -> string -> ty;;

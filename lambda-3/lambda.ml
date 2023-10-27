@@ -25,6 +25,9 @@ type term =
   | TmLetIn of string * term * term
 ;;
 
+type command =
+  | Eval of term
+
 
 (* CONTEXT MANAGEMENT *)
 
@@ -95,7 +98,7 @@ let rec typeof ctx tm = match tm with
     (* T-Var *)
   | TmVar x ->
       (try getbinding ctx x with
-       _ -> raise (Type_error ("no binding type for variable " ^ x)))
+      _ -> raise (Type_error ("no binding type for variable " ^ x)))
 
     (* T-Abs *)
   | TmAbs (x, tyT1, t2) ->
@@ -108,10 +111,10 @@ let rec typeof ctx tm = match tm with
       let tyT1 = typeof ctx t1 in
       let tyT2 = typeof ctx t2 in
       (match tyT1 with
-           TyArr (tyT11, tyT12) ->
-             if tyT2 = tyT11 then tyT12
-             else raise (Type_error "parameter type mismatch")
-         | _ -> raise (Type_error "arrow type expected"))
+          TyArr (tyT11, tyT12) ->
+            if tyT2 = tyT11 then tyT12
+            else raise (Type_error "parameter type mismatch")
+        | _ -> raise (Type_error "arrow type expected"))
 
     (* T-Let *)
   | TmLetIn (x, t1, t2) ->
@@ -135,7 +138,7 @@ let rec string_of_term = function
   | TmZero ->
       "0"
   | TmSucc t ->
-     let rec f n t' = match t' with
+    let rec f n t' = match t' with
           TmZero -> string_of_int n
         | TmSucc s -> f (n+1) s
         | _ -> "succ " ^ "(" ^ string_of_term t ^ ")"
@@ -213,18 +216,18 @@ let rec subst x s tm = match tm with
   | TmAbs (y, tyY, t) ->
       if y = x then tm
       else let fvs = free_vars s in
-           if not (List.mem y fvs)
-           then TmAbs (y, tyY, subst x s t)
-           else let z = fresh_name y (free_vars t @ fvs) in
+          if not (List.mem y fvs)
+          then TmAbs (y, tyY, subst x s t)
+          else let z = fresh_name y (free_vars t @ fvs) in
                 TmAbs (z, tyY, subst x s (subst y (TmVar z) t))
   | TmApp (t1, t2) ->
       TmApp (subst x s t1, subst x s t2)
   | TmLetIn (y, t1, t2) ->
       if y = x then TmLetIn (y, subst x s t1, t2)
       else let fvs = free_vars s in
-           if not (List.mem y fvs)
-           then TmLetIn (y, subst x s t1, subst x s t2)
-           else let z = fresh_name y (free_vars t2 @ fvs) in
+          if not (List.mem y fvs)
+          then TmLetIn (y, subst x s t1, subst x s t2)
+          else let z = fresh_name y (free_vars t2 @ fvs) in
                 TmLetIn (z, subst x s t1, subst x s (subst y (TmVar z) t2))
 ;;
 

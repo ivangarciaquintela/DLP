@@ -18,6 +18,7 @@ type token =
   | EQ
   | COLON
   | ARROW
+  | SEMICOLON
   | EOF
   | INTV of (int)
   | IDV of (string)
