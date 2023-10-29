@@ -25,6 +25,7 @@ type term =
 
 type command =
   | Eval of term
+;;
 
 val emptyctx : context;;
 val addbinding : context -> string -> ty -> context;;

@@ -30,13 +30,20 @@
 %token <string> IDV
 
 %start s
-%type <Lambda.term> s
+%type <Lambda.command list> s
 
 %%
 
 s :
-    term SEMICOLON
-      { $1 }
+    EOF 
+        { [] }
+    | command SEMICOLON s
+      { $1::$3 }
+
+command:
+    term
+    {Eval ($1)}
+
 
 term :
     appTerm

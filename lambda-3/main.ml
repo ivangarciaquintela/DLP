@@ -6,16 +6,51 @@ open Lambda;;
 open Parser;;
 open Lexer;;
 
+open String;;
+open List;;
+open Str;;
+
+let ends_with_semicolon str =
+  let len = String.length str in
+  if len < 2 then
+    false
+  else
+    let last_2_char = String.sub str (len - 2) 2 in
+    last_2_char = ";;"
+;;
+
+
+(*
+Fncion s  pide por parametro un token y un lexbuf
+por eso se hace el from_string de un string
+   **)
+let rec process_line line = 
+  if ends_with_semicolon line then s token (from_string( String.sub line 0 ((String.length line)-0)) )
+  else
+    begin
+      print_string "  ";
+      flush stdout;
+      process_line(line ^ " " ^ read_line())
+    end
+  ;;
+
+  let rec execute = function
+  | [] ->
+      ()
+  | Eval (term)::tail ->
+      print_endline (string_of_term (eval term) ^ " : " ^ string_of_ty (typeof emptyctx term));
+      execute tail
+;;
+
 let top_level_loop () =
   print_endline "Evaluator of lambda expressions...";
   let rec loop ctx =
     print_string ">> ";
     flush stdout;
     try
-      let tm = s token (from_string (read_line ())) in
-      let tyTm = typeof ctx tm in
-      print_endline (string_of_term (eval tm) ^ " : " ^ string_of_ty tyTm);
-      loop ctx
+      let line = trim (read_line ()) in
+        execute (process_line line);
+        loop ctx
     with
        Lexical_error ->
          print_endline "lexical error";

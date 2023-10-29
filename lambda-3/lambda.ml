@@ -27,6 +27,7 @@ type term =
 
 type command =
   | Eval of term
+;;
 
 
 (* CONTEXT MANAGEMENT *)
