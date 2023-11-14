@@ -31,7 +31,7 @@ let rec process_line line =
     end
   ;;
 
-  let rec execute = function
+let rec execute = function
   | [] ->
       ()
   | Eval (term)::tail ->

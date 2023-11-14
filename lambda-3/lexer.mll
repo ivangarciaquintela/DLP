@@ -18,6 +18,7 @@ rule token = parse
   | "iszero"    { ISZERO }
   | "concat"    { CONCAT }
   | "let"       { LET }
+  | "letrec"       { LETREC }
   | "in"        { IN }
   | "Bool"      { BOOL }
   | "Nat"       { NAT }

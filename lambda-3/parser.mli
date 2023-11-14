@@ -10,6 +10,7 @@ type token =
   | ISZERO
   | CONCAT
   | LET
+  | LETREC
   | IN
   | BOOL
   | NAT
