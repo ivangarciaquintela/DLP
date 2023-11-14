@@ -69,5 +69,43 @@
                     | Bind (name, term)::tail -> 
                         print_endline (name ^ " : " ^ string_of_ty (typeof emptyctx term));
                         execute tail
+        * en el parser.mly
+
+
 
     3. String type
+
+        Operacion de concat
+            palabra reservada concat
+
+        en lambda.mli y lambda.ml
+            type ty
+                | TyString
+            
+            type term
+                | TmString of string
+                | TmConcat of term * term
+
+        en lexer.mll
+                | "concat"    { CONCAT }
+                | "String"    { STRING }
+
+                  | '"'[^ '"' ';' '\n']*'"' {let s = Lexing.lexeme lexbuf in STRINGV (String.sub s l (String.length s - 2)) }
+
+        en parser.mly
+                %token CONCAT, %token STRING, %token <string> STRINGV
+
+        en lambda.ml
+              | TmConcat (TmString s1, TmString s2) ->
+                    TmString (s1 ^ s2)
+
+              | TmConcat (TmString s1, TmString t2) ->
+                    let t2' = eval1 t2 in
+                    TmConcat (TmString s1, t2')
+  
+              | TmConcat (TmString t1, TmString s2) ->
+                    let t1' = eval1 t1 in
+                    TmConcat (TmString t1, s2')
+      
+        
+

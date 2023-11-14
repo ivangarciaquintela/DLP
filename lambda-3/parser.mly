@@ -14,10 +14,12 @@
 %token SUCC
 %token PRED
 %token ISZERO
+%token CONCAT
 %token LET
 %token IN
 %token BOOL
 %token NAT
+%token STRING
 
 %token LPAREN
 %token RPAREN
@@ -30,6 +32,7 @@
 
 %token <int> INTV
 %token <string> IDV
+%token <string> STRINGV
 
 %start s
 %type <Lambda.command list> s
@@ -68,6 +71,8 @@ appTerm :
       { TmPred $2 }
   | ISZERO atomicTerm
       { TmIsZero $2 }
+  | CONCAT atomicTerm atomicTerm
+      { TmConcat ($2, $3) }
   | appTerm atomicTerm
       { TmApp ($1, $2) }
 
@@ -86,7 +91,8 @@ atomicTerm :
             0 -> TmZero
           | n -> TmSucc (f (n-1))
         in f $1 }
-
+    | STRINGV
+        { TmString $1 }
 ty :
     atomicTy
       { $1 }
@@ -100,4 +106,6 @@ atomicTy :
       { TyBool }
   | NAT
       { TyNat }
+  | STRING
+      { TyString }
 
