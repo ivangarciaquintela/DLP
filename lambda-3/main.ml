@@ -20,12 +20,9 @@ let ends_with_semicolon str =
 ;;
 
 
-(*
-Fncion s  pide por parametro un token y un lexbuf
-por eso se hace el from_string de un string
-   **)
+
 let rec process_line line = 
-  if ends_with_semicolon line then s token (from_string( String.sub line 0 ((String.length line)-0)) )
+  if ends_with_semicolon line then s token (from_string line)
   else
     begin
       print_string "  ";
@@ -38,7 +35,7 @@ let rec process_line line =
   | [] ->
       ()
   | Eval (term)::tail ->
-      print_endline (string_of_term (eval term) ^ " : " ^ string_of_ty (typeof emptyctx term));
+      print_endline ("- : " ^ string_of_ty (typeof emptyctx term) ^ " = " ^string_of_term (eval term) );
       execute tail
 ;;
 

@@ -53,7 +53,7 @@ let rec string_of_ty ty = match ty with
   | TyNat ->
       "Nat"
   | TyArr (ty1, ty2) ->
-      "(" ^ string_of_ty ty1 ^ ")" ^ " -> " ^ "(" ^ string_of_ty ty2 ^ ")"
+      string_of_ty ty1 ^ " -> " ^  string_of_ty ty2 
 ;;
 
 exception Type_error of string
@@ -133,9 +133,9 @@ let rec string_of_term = function
   | TmFalse ->
       "false"
   | TmIf (t1,t2,t3) ->
-      "if " ^ "(" ^ string_of_term t1 ^ ")" ^
-      " then " ^ "(" ^ string_of_term t2 ^ ")" ^
-      " else " ^ "(" ^ string_of_term t3 ^ ")"
+      "if " ^ string_of_term t1 ^ "\n" ^
+      " then " ^ string_of_term t2 ^ "\n" ^
+      " else " ^ string_of_term t3 
   | TmZero ->
       "0"
   | TmSucc t ->
@@ -147,13 +147,13 @@ let rec string_of_term = function
   | TmPred t ->
       "pred " ^ "(" ^ string_of_term t ^ ")"
   | TmIsZero t ->
-      "iszero " ^ "(" ^ string_of_term t ^ ")"
+      "iszero " ^ string_of_term t 
   | TmVar s ->
       s
   | TmAbs (s, tyS, t) ->
-      "(lambda " ^ s ^ ":" ^ string_of_ty tyS ^ ". " ^ string_of_term t ^ ")"
+    "lambda " ^ s ^ " : " ^ string_of_ty tyS ^ ". " ^ string_of_term t ^ "\n"
   | TmApp (t1, t2) ->
-      "(" ^ string_of_term t1 ^ " " ^ string_of_term t2 ^ ")"
+      string_of_term t1 ^ " " ^ string_of_term t2 
   | TmLetIn (s, t1, t2) ->
       "let " ^ s ^ " = " ^ string_of_term t1 ^ " in " ^ string_of_term t2
 ;;
