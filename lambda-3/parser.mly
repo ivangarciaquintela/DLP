@@ -1,6 +1,8 @@
 
 %{
-  open Lambda;;
+    open Lambda;;
+    open Hashtbl;;
+    let table = create 1024;;
 %}
 
 %token LAMBDA
@@ -43,6 +45,8 @@ s :
 command:
     term
     {Eval ($1)}
+    | IDV EQ term
+        { add table $1 $3; Bind ($1, $3) }
 
 
 term :
@@ -75,7 +79,8 @@ atomicTerm :
   | FALSE
       { TmFalse }
   | IDV
-      { TmVar $1 }
+      //{ TmVar $1 }
+      { try find table $1 with Not_found -> TmVar ($1) }      
   | INTV
       { let rec f = function
             0 -> TmZero

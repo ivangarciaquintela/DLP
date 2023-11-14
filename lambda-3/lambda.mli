@@ -25,6 +25,8 @@ type term =
 
 type command =
   | Eval of term
+  | Bind of string * term
+
 ;;
 
 val emptyctx : context;;

@@ -37,6 +37,10 @@ let rec process_line line =
   | Eval (term)::tail ->
       print_endline ("- : " ^ string_of_ty (typeof emptyctx term) ^ " = " ^string_of_term (eval term) );
       execute tail
+  | Bind (name, term)::tail ->
+    print_endline (name ^ " : " ^ string_of_ty (typeof emptyctx term));
+    execute tail
+        
 ;;
 
 let top_level_loop () =
