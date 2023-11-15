@@ -63,22 +63,25 @@
     1. Internal fixed point combiner
 
     2. Global definition context
-        * Using a Hashtbl module
-        * en el main.ml 
+        * Using a Hashtbl module, with functional behaviour.
+        * main.ml 
 
                     | Bind (name, term)::tail -> 
                         print_endline (name ^ " : " ^ string_of_ty (typeof emptyctx term));
                         execute tail
-        * en el parser.mly
+        * parser.mly
+
+                bajo command term:
+                    | IDV EQ term { add table $1 $3; Bind ($1, $3) }
 
 
 
-    3. String type
 
-        Operacion de concat
-            palabra reservada concat
+    3. String type and concat implementation
 
-        en lambda.mli y lambda.ml
+
+        lambda.mli and lambda.ml
+            
             type ty
                 | TyString
             
@@ -86,16 +89,19 @@
                 | TmString of string
                 | TmConcat of term * term
 
-        en lexer.mll
+        lexer.mll
+                
                 | "concat"    { CONCAT }
                 | "String"    { STRING }
 
                   | '"'[^ '"' ';' '\n']*'"' {let s = Lexing.lexeme lexbuf in STRINGV (String.sub s l (String.length s - 2)) }
 
-        en parser.mly
-                %token CONCAT, %token STRING, %token <string> STRINGV
+        parser.mly
+                
+                añadir %token CONCAT, %token STRING, %token <string> STRINGV
 
-        en lambda.ml
+        lambda.ml
+              
               | TmConcat (TmString s1, TmString s2) ->
                     TmString (s1 ^ s2)
 
