@@ -71,9 +71,18 @@
                         execute tail
         * parser.mly
 
-                bajo command term:
-                    | IDV EQ term { add table $1 $3; Bind ($1, $3) }
+                open Hashtbl;;
 
+                let table = create 1024;;
+
+                #bajo command term:
+                    | IDV EQ term { add table $1 $3; Bind ($1, $3) }
+                #en el atomic term
+                    //{ TmVar $1 }
+                    { try find table $1 with Not_found -> TmVar ($1) }     
+        * lambda.ml y lambda.mly añadir al command:
+
+                | Bind of string * term      
 
 
 
