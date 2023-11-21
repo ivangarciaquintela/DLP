@@ -57,7 +57,13 @@
 
     2. "pretty-printer" :
         - We modified the following files:
+            * lambda.ml
+            ![Alt text](image.png)
+                Se eliminaron los paréntesis redundantes
 
+
+            * main.ml
+                
 2. Extensions of the lambda-calculus language:
 
     1. Internal fixed point combiner
