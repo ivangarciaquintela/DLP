@@ -58,7 +58,7 @@
     2. "pretty-printer" :
         - We modified the following files:
             * lambda.ml
-            ![Alt text](image.png)
+            ![Alt text](img/prettyprinterlambda.png)
                 Se eliminaron los paréntesis redundantes
 
 
