@@ -90,7 +90,8 @@
 
                 | Bind of string * term      
 
-
+otra tabla para tener contexto de tipos
+añadir string funciones mas
 
     3. String type and concat implementation
 

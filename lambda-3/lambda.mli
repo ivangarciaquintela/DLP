@@ -24,6 +24,7 @@ type term =
   | TmLetIn of string * term * term
   | TmString of string
   | TmConcat of term * term
+  | TmStrlen of term
   | TmFix of term
 ;;
 

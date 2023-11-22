@@ -26,6 +26,7 @@ type term =
   | TmLetIn of string * term * term
   | TmString of string
   | TmConcat of term * term
+  | TmStrlen of term
   | TmFix of term
 ;;
 
@@ -133,7 +134,11 @@ let rec typeof ctx tm = match tm with
   
   | TmString _ ->
       TyString
-  
+
+  |TmStrlen (t1) ->
+      if typeof ctx t1 = TyString then TyNat
+      else raise (Type_error "argument of strlen is not a string")
+
   | TmConcat (t1, t2) ->
       if typeof ctx t1= TyString && typeof ctx t2 = TyString then TyString
       else raise (Type_error "arguments of concat are not strings")
@@ -181,10 +186,12 @@ let rec string_of_term = function
       "let " ^ s ^ " = " ^ string_of_term t1 ^ " in " ^ string_of_term t2
   | TmString s ->
       "\"" ^ s ^ "\""
+  | TmStrlen t ->
+      "strlen " ^ string_of_term t 
   | TmConcat (t1, t2) ->
       string_of_term t1 ^ " ^ " ^ string_of_term t2
   | TmFix t -> 
-    "(fix" ^ string_of_term t ^ ")"
+      "fix" ^ string_of_term t
     ;;
 
 let rec ldif l1 l2 = match l1 with
@@ -222,6 +229,9 @@ let rec free_vars tm = match tm with
       lunion (ldif (free_vars t2) [s]) (free_vars t1)
   | TmString _ ->
       []
+  | TmStrlen t ->
+      free_vars t
+      (*alomejor mal*)
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
   |TmFix t -> free_vars t
@@ -266,6 +276,9 @@ let rec subst x s tm = match tm with
                 TmLetIn (z, subst x s t1, subst x s (subst y (TmVar z) t2))
   | TmString st ->
       TmString st
+  | TmStrlen t ->
+      TmStrlen (subst x s t)
+            (*alomejor mal*)
   | TmConcat (t1, t2) ->
       TmConcat (subst x s t1, subst x s t2)
   | TmFix t -> TmFix (subst x s t)
@@ -357,9 +370,22 @@ let rec eval1 tm = match tm with
       let t1' = eval1 t1 in
       TmLetIn (x, t1', t2)
 
+    (* E-Strlen *)
+    | TmStrlen (TmString s) ->
+      let len = String.length s in
+      let rec make_succ n acc = 
+        if n = 0 then acc else make_succ (n - 1) (TmSucc acc) 
+      in
+      make_succ len TmZero
+
+    (* E-Strlen1 *)
+  | TmStrlen (s) ->
+      let s' = eval1 s in
+      TmStrlen (s')
+
     (* E-String *)
   | TmConcat (TmString s1, TmString s2) ->
-      TmString (s1 ^ s2)
+      TmString (s1 ^ s2) 
 
     (* E-String1 *)
   | TmConcat (TmString s1, t2) ->

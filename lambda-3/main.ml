@@ -53,17 +53,17 @@ let top_level_loop () =
         execute (process_line line);
         loop ctx
     with
-       Lexical_error ->
-         print_endline "lexical error";
-         loop ctx
-     | Parse_error ->
-         print_endline "syntax error";
-         loop ctx
-     | Type_error e ->
-         print_endline ("type error: " ^ e);
-         loop ctx
-     | End_of_file ->
-         print_endline "...bye!!!"
+      Lexical_error ->
+          print_endline "lexical error";
+          loop ctx
+      | Parse_error ->
+          print_endline "syntax error";
+          loop ctx
+      | Type_error e ->
+          print_endline ("type error: " ^ e);
+          loop ctx
+      | End_of_file ->
+          print_endline "...bye!!!"
   in
     loop emptyctx
   ;;
