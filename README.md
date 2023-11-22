@@ -93,7 +93,7 @@
 otra tabla para tener contexto de tipos
 añadir string funciones mas
 
-    3. String type and concat implementation
+    3. String type, concat and strlen implementation
 
 
         lambda.mli and lambda.ml
@@ -104,9 +104,10 @@ añadir string funciones mas
             type term
                 | TmString of string
                 | TmConcat of term * term
+                | TmStrlen of term
 
         lexer.mll
-                
+                | "strlen"    { CONCAT }
                 | "concat"    { CONCAT }
                 | "String"    { STRING }
 
@@ -114,7 +115,7 @@ añadir string funciones mas
 
         parser.mly
                 
-                añadir %token CONCAT, %token STRING, %token <string> STRINGV
+                añadir %token CONCAT, %token STRLEN, %token STRING, %token <string> STRINGV
 
         lambda.ml
               
@@ -129,5 +130,12 @@ añadir string funciones mas
                     let t1' = eval1 t1 in
                     TmConcat (TmString t1, s2')
       
+              | TmStrlen (TmString s) ->
+                let len = String.length s in
+                let rec make_succ n acc = 
+                    if n = 0 then acc else make_succ (n - 1) (TmSucc acc) in make_succ len TmZero
+              | TmStrlen (s) ->
+                let s' = eval1 s in
+                TmStrlen (s')
         
 
