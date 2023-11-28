@@ -16,6 +16,9 @@ type token =
   | BOOL
   | NAT
   | STRING
+  | LBRACK
+  | RBRACK
+  | COMMA
   | LPAREN
   | RPAREN
   | DOT

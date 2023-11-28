@@ -6,6 +6,9 @@ type ty =
   | TyNat
   | TyArr of ty * ty
   | TyString
+  (*tuples
+  | TyTuple of ty list*)
+
 ;;
 
 type context =

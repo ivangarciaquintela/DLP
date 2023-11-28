@@ -26,6 +26,12 @@ rule token = parse
   | "String"    { STRING }
   | '('         { LPAREN }
   | ')'         { RPAREN }
+  
+  (*tuple brackets*)
+  | '['         { LBRACK }
+  | ']'         { RBRACK }
+  | ','         { COMMA }
+
   | '.'         { DOT }
   | '='         { EQ }
   | ':'         { COLON }

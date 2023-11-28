@@ -81,17 +81,15 @@
 
                 let table = create 1024;;
 
-                #bajo command term:
+                #under command term:
                     | IDV EQ term { add table $1 $3; Bind ($1, $3) }
-                #en el atomic term
+                #on atomic term
                     //{ TmVar $1 }
                     { try find table $1 with Not_found -> TmVar ($1) }     
-        * lambda.ml y lambda.mly añadir al command:
+        * lambda.ml y lambda.mly add to command:
 
                 | Bind of string * term      
 
-otra tabla para tener contexto de tipos
-añadir string funciones mas
 
     3. String type, concat and strlen implementation
 
@@ -137,5 +135,9 @@ añadir string funciones mas
               | TmStrlen (s) ->
                 let s' = eval1 s in
                 TmStrlen (s')
-        
+    
+    4. Tuplas
+                
+        Empty tuples are not permited.
 
+        

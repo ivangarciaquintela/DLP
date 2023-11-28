@@ -23,6 +23,10 @@
 %token NAT
 %token STRING
 
+%token LBRACK
+%token RBRACK
+%token COMMA
+
 %token LPAREN
 %token RPAREN
 %token DOT

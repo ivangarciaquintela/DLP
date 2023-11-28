@@ -18,3 +18,6 @@ https://github.com/ocaml-community/lambda-term
 3. Redacción de una memoria final
 - [ ] 3.1 Manual de usuario
 - [ ] 3.2 Manual técnico 
+
+
+- [ ] otra tabla para tener contexto de tipos
