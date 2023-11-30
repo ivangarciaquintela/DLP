@@ -31,6 +31,8 @@ type term =
   | TmConcat of term * term
   | TmStrlen of term
   | TmFix of term
+  (* tuple term 
+  | TmTuple of term list *)
 ;;
 
 type command =
@@ -66,6 +68,10 @@ let rec string_of_ty ty = match ty with
       string_of_ty ty1 ^ " -> " ^  string_of_ty ty2 
   | TyString ->
       "String"
+  (*tuple
+  | TyTuple tyL ->
+    let sFdL = List.map string_of_ty tyL in
+    "(" ^ (String.concat ", " sFdL) ^ ")"  *)
 ;;
 
 exception Type_error of string
@@ -153,6 +159,13 @@ let rec typeof ctx tm = match tm with
       else raise(Type_error "result of body not compatible with domain")
       | _ -> raise (Type_error "arrow type expected")
       )
+
+  (*tuple
+
+  | TmTuple tmL -> TyTuple (List.map (typeof ctx) tmL)
+  *)
+
+  
     ;;
 
 
@@ -238,6 +251,12 @@ let rec free_vars tm = match tm with
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
   |TmFix t -> free_vars t
+  (*tuple
+  | TmTuple tmL -> 
+      List.fold_left lunion [] (List.map free_vars tmL)
+      *)
+
+
 ;;
 
 let rec fresh_name x l =
@@ -285,6 +304,10 @@ let rec subst x s tm = match tm with
   | TmConcat (t1, t2) ->
       TmConcat (subst x s t1, subst x s t2)
   | TmFix t -> TmFix (subst x s t)
+
+  (*tuple
+  | TmTuple tmL -> TmTuple (List.map (subst x s) tmL)
+    *)
 ;;
 
 let rec isnumericval tm = match tm with
@@ -298,6 +321,11 @@ let rec isval tm = match tm with
   | TmFalse -> true
   | TmAbs _ -> true
   | TmString _ -> true
+
+  (*tuple
+  | TmTuple tmL when List.for_all isval tmL -> true
+  *)
+
   | t when isnumericval t -> true
   | _ -> false
 ;;
@@ -409,6 +437,8 @@ let rec eval1 tm = match tm with
 | TmFix t1 ->
     let t1' = eval1 t1 in
     TmFix t1'
+
+  (*tuple*)
 
   | _ ->
       raise NoRuleApplies
