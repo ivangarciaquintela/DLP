@@ -4,9 +4,7 @@ type ty =
   | TyNat
   | TyArr of ty * ty
   | TyString
-  (*tuple new
-  | TyTuple of ty list*)
-  | TyTuple of ty * ty
+  | TyTuple of ty list
 ;;
 
 type context =
@@ -29,10 +27,8 @@ type term =
   | TmConcat of term * term
   | TmStrlen of term
   | TmFix of term
-  (*tuple new
   | TmTuple of term list
-  | TmProjTuple of term * int*)
-  | TmTuple of term * term
+  | TmProj of term * int
 
 ;;
 

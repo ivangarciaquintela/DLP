@@ -6,7 +6,7 @@ type ty =
   | TyNat
   | TyArr of ty * ty
   | TyString
-  | TyTuple of ty * ty
+  | TyTuple of ty list
 
 ;;
 
@@ -30,7 +30,8 @@ type term =
   | TmConcat of term * term
   | TmStrlen of term
   | TmFix of term
-  | TmTuple of term * term
+  | TmTuple of term list
+  | TmProj of term * int
 ;;
 
 type command =
@@ -66,9 +67,10 @@ let rec string_of_ty ty = match ty with
       string_of_ty ty1 ^ " -> " ^  string_of_ty ty2 
   | TyString ->
       "String"
+  | TyTuple tyL ->
+        let sFdL = List.map string_of_ty tyL in
+        "(" ^ (String.concat ", " sFdL) ^ ")"
 
-  | TyTuple (ty1, ty2) ->
-    "(" ^ string_of_ty ty1 ^ ", " ^ string_of_ty ty2 ^ ")"
 ;;
 
 exception Type_error of string
@@ -158,9 +160,17 @@ let rec typeof ctx tm = match tm with
       else raise(Type_error "result of body not compatible with domain")
       | _ -> raise (Type_error "arrow type expected")
       )
+  | TmTuple t -> TyTuple (List.map (typeof ctx) t)
 
-  | TmTuple (t1,t2) -> 
-    TyTuple(typeof ctx t1,typeof ctx t2)
+  | TmProj (t, n) ->
+    let tyT = typeof ctx t in
+    match tyT with
+    | TyTuple tyL ->
+        (match List.nth_opt tyL n with
+        | Some ty -> ty  (* Devuelve el tipo en la posición 'n' *)
+        | None -> raise (Type_error "Posición de proyección fuera de rango"))
+    | _ ->
+        raise (Type_error "No se puede aplicar proyección a un tipo que no es una tupla")
 ;;
 
 
@@ -203,8 +213,13 @@ let rec string_of_term = function
       string_of_term t1 ^ " ^ " ^ string_of_term t2
   | TmFix t -> 
       "fix" ^ string_of_term t
-  | TmTuple (t1, t2) ->
-      "tuple" ^ "(" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")" 
+
+  | TmTuple t -> 
+      let values_string = String.concat ", " (List.map string_of_term t) in
+    "tuple(" ^ values_string ^ ")"
+    
+  | TmProj (t,pos) ->
+    "proj(" ^ string_of_term t ^ ", " ^ string_of_int pos ^ ")"
 ;;
 
 let rec ldif l1 l2 = match l1 with
@@ -249,9 +264,11 @@ let rec free_vars tm = match tm with
       lunion (free_vars t1) (free_vars t2)
   |TmFix t -> free_vars t
   
-  | TmTuple (t1, t2) ->
-      lunion (free_vars t1) (free_vars t2)
-
+  | TmTuple t -> 
+    List.fold_left (fun acc term -> lunion acc (free_vars term)) [] t
+  
+  | TmProj (t, _) ->
+      free_vars t
 ;;
 
 let rec fresh_name x l =
@@ -300,11 +317,11 @@ let rec subst x s tm = match tm with
       TmConcat (subst x s t1, subst x s t2)
   | TmFix t -> TmFix (subst x s t)
 
-  | TmTuple (t1, t2) ->
-    TmTuple (subst x s t1, subst x s t2)
-  (*tuple
-  | TmTuple tmL -> TmTuple (List.map (subst x s) tmL)
-    *)
+  | TmTuple t -> TmTuple (List.map (subst x s) t)
+
+  | TmProj (t, n) ->
+    TmProj (subst x s t, n)
+    
 ;;
 
 let rec isnumericval tm = match tm with
@@ -318,10 +335,7 @@ let rec isval tm = match tm with
   | TmFalse -> true
   | TmAbs _ -> true
   | TmString _ -> true
-  | TmTuple _ -> true 
-  (*tuple
-  | TmTuple tmL when List.for_all isval tmL -> true
-  *)
+  | TmTuple t when List.for_all isval t -> true
 
   | t when isnumericval t -> true
   | _ -> false
@@ -421,7 +435,7 @@ let rec eval1 tm = match tm with
       TmConcat (TmString s1, t2')
   
     (* E-String2 *)
-    | TmConcat (t1, t2) ->
+  | TmConcat (t1, t2) ->
       let t1' = eval1 t1 in
       TmConcat (t1', t2)
     
@@ -431,15 +445,16 @@ let rec eval1 tm = match tm with
     subst x tm t12
 
   (* E-Fix *)
-| TmFix t1 ->
+  | TmFix t1 ->
     let t1' = eval1 t1 in
     TmFix t1'
 
-  (*tuple*)
-  |TmTuple (t1,t2) ->
-    let t1' = eval1 t1 in
-    let t2' = eval1 t2 in
-    TmTuple(t1', t2')
+  (* E-Tuple *)
+  |TmTuple t ->
+    let eval_t = List.map eval1 t in
+    TmTuple eval_t
+  | TmProj (TmTuple t, pos) when List.length t > pos ->
+      List.nth t pos
 
   | _ ->
       raise NoRuleApplies

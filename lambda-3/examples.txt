@@ -29,3 +29,9 @@ lambda n : Nat. lambda m : Nat. if iszero n then m
 else succ (sum (pred n) m) 
 in 
 sum 21 34;;
+
+#Tuplas
+[3,2];;
+[3,"hola"];;
+[true, "hola"];;
+x = [3, true];;

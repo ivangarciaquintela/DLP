@@ -69,6 +69,20 @@ term :
         { TmLetIn ($2, $4, $6) }
     | LETREC IDV COLON ty EQ term IN term
         { TmLetIn ($2, TmFix (TmAbs ($2, $4, $6)), $8) }
+    | LBRACK list RBRACK
+        {TmTuple ($2)}
+    | term DOT INTV
+        {TmProj ($1, $3)}
+list :
+    /* Manejar el caso de una lista vacía */
+    | 
+        { [] }
+    /* Manejar una lista con un solo término */
+    | term
+        { [$1] }
+    /* Manejar una lista con múltiples términos separados por comas */
+    | term COMMA list
+        { $1 :: $3 }
 appTerm :
     atomicTerm
         { $1 }
@@ -88,8 +102,6 @@ appTerm :
 atomicTerm :
     LPAREN term RPAREN
         { $2 }
-    | LBRACK term COMMA term RBRACK
-        { TmTuple($2, $4)}
     | TRUE
         { TmTrue }
     | FALSE
@@ -109,8 +121,6 @@ ty :
         { $1 }
     | atomicTy ARROW ty
         { TyArr ($1, $3) }
-    | LBRACK atomicTy COMMA atomicTy RBRACK
-        {TyTuple ($2, $4)}
 
 atomicTy :
     LPAREN ty RPAREN
