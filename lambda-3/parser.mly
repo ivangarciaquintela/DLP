@@ -88,6 +88,8 @@ appTerm :
 atomicTerm :
     LPAREN term RPAREN
         { $2 }
+    | LBRACK term COMMA term RBRACK
+        { TmTuple($2, $4)}
     | TRUE
         { TmTrue }
     | FALSE
@@ -107,6 +109,8 @@ ty :
         { $1 }
     | atomicTy ARROW ty
         { TyArr ($1, $3) }
+    | LBRACK atomicTy COMMA atomicTy RBRACK
+        {TyTuple ($2, $4)}
 
 atomicTy :
     LPAREN ty RPAREN

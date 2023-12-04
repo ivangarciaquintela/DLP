@@ -6,8 +6,7 @@ type ty =
   | TyNat
   | TyArr of ty * ty
   | TyString
-  (*tuples
-  | TyTuple of ty list*)
+  | TyTuple of ty * ty
 
 ;;
 
@@ -31,8 +30,7 @@ type term =
   | TmConcat of term * term
   | TmStrlen of term
   | TmFix of term
-  (* tuple term 
-  | TmTuple of term list *)
+  | TmTuple of term * term
 ;;
 
 type command =
@@ -68,10 +66,9 @@ let rec string_of_ty ty = match ty with
       string_of_ty ty1 ^ " -> " ^  string_of_ty ty2 
   | TyString ->
       "String"
-  (*tuple
-  | TyTuple tyL ->
-    let sFdL = List.map string_of_ty tyL in
-    "(" ^ (String.concat ", " sFdL) ^ ")"  *)
+
+  | TyTuple (ty1, ty2) ->
+    "(" ^ string_of_ty ty1 ^ ", " ^ string_of_ty ty2 ^ ")"
 ;;
 
 exception Type_error of string
@@ -148,9 +145,11 @@ let rec typeof ctx tm = match tm with
       if typeof ctx t1 = TyString then TyNat
       else raise (Type_error "argument of strlen is not a string")
 
+
   | TmConcat (t1, t2) ->
       if typeof ctx t1= TyString && typeof ctx t2 = TyString then TyString
       else raise (Type_error "arguments of concat are not strings")
+
   | TmFix t1 ->
     let tyT1 = typeof ctx t1 in
     (match tyT1 with
@@ -160,13 +159,9 @@ let rec typeof ctx tm = match tm with
       | _ -> raise (Type_error "arrow type expected")
       )
 
-  (*tuple
-
-  | TmTuple tmL -> TyTuple (List.map (typeof ctx) tmL)
-  *)
-
-  
-    ;;
+  | TmTuple (t1,t2) -> 
+    TyTuple(typeof ctx t1,typeof ctx t2)
+;;
 
 
 (* TERMS MANAGEMENT (EVALUATION) *)
@@ -208,7 +203,9 @@ let rec string_of_term = function
       string_of_term t1 ^ " ^ " ^ string_of_term t2
   | TmFix t -> 
       "fix" ^ string_of_term t
-    ;;
+  | TmTuple (t1, t2) ->
+      "tuple" ^ "(" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")" 
+;;
 
 let rec ldif l1 l2 = match l1 with
     [] -> []
@@ -251,11 +248,9 @@ let rec free_vars tm = match tm with
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
   |TmFix t -> free_vars t
-  (*tuple
-  | TmTuple tmL -> 
-      List.fold_left lunion [] (List.map free_vars tmL)
-      *)
-
+  
+  | TmTuple (t1, t2) ->
+      lunion (free_vars t1) (free_vars t2)
 
 ;;
 
@@ -305,6 +300,8 @@ let rec subst x s tm = match tm with
       TmConcat (subst x s t1, subst x s t2)
   | TmFix t -> TmFix (subst x s t)
 
+  | TmTuple (t1, t2) ->
+    TmTuple (subst x s t1, subst x s t2)
   (*tuple
   | TmTuple tmL -> TmTuple (List.map (subst x s) tmL)
     *)
@@ -321,7 +318,7 @@ let rec isval tm = match tm with
   | TmFalse -> true
   | TmAbs _ -> true
   | TmString _ -> true
-
+  | TmTuple _ -> true 
   (*tuple
   | TmTuple tmL when List.for_all isval tmL -> true
   *)
@@ -439,6 +436,10 @@ let rec eval1 tm = match tm with
     TmFix t1'
 
   (*tuple*)
+  |TmTuple (t1,t2) ->
+    let t1' = eval1 t1 in
+    let t2' = eval1 t2 in
+    TmTuple(t1', t2')
 
   | _ ->
       raise NoRuleApplies

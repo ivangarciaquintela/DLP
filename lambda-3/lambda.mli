@@ -6,6 +6,7 @@ type ty =
   | TyString
   (*tuple new
   | TyTuple of ty list*)
+  | TyTuple of ty * ty
 ;;
 
 type context =
@@ -31,6 +32,7 @@ type term =
   (*tuple new
   | TmTuple of term list
   | TmProjTuple of term * int*)
+  | TmTuple of term * term
 
 ;;
 
