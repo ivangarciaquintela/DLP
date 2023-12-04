@@ -7,6 +7,7 @@ type ty =
   | TyArr of ty * ty
   | TyString
   | TyTuple of ty list
+  | TyRecord of (string * ty) list
 
 ;;
 
@@ -32,6 +33,8 @@ type term =
   | TmFix of term
   | TmTuple of term list
   | TmProj of term * int
+  | TmRecord of (string * term) list
+
 ;;
 
 type command =
@@ -70,6 +73,10 @@ let rec string_of_ty ty = match ty with
   | TyTuple tyL ->
         let sFdL = List.map string_of_ty tyL in
         "(" ^ (String.concat ", " sFdL) ^ ")"
+  | TyRecord t -> 
+      let sfdL = List.map (fun (label, field_ty) -> label ^ ": " ^ string_of_ty field_ty) t 
+           in  
+           "(" ^ (String.concat ", " sfdL) ^ ")"
 
 ;;
 
@@ -164,13 +171,15 @@ let rec typeof ctx tm = match tm with
 
   | TmProj (t, n) ->
     let tyT = typeof ctx t in
-    match tyT with
+    (match tyT with
     | TyTuple tyL ->
         (match List.nth_opt tyL n with
         | Some ty -> ty  (* Devuelve el tipo en la posición 'n' *)
         | None -> raise (Type_error "Posición de proyección fuera de rango"))
-    | _ ->
-        raise (Type_error "No se puede aplicar proyección a un tipo que no es una tupla")
+        | _ ->
+          raise (Type_error "No se puede aplicar proyección a un tipo que no es una tupla"))
+  
+  | TmRecord l -> TyRecord (List.map (fun (s,t) -> (s, typeof ctx t)) l)
 ;;
 
 
@@ -216,10 +225,16 @@ let rec string_of_term = function
 
   | TmTuple t -> 
       let values_string = String.concat ", " (List.map string_of_term t) in
-    "tuple(" ^ values_string ^ ")"
+    "tuple {" ^ values_string ^ "}"
     
   | TmProj (t,pos) ->
-    "proj(" ^ string_of_term t ^ ", " ^ string_of_int pos ^ ")"
+    "proj (" ^ string_of_term t ^ ", " ^ string_of_int pos ^ ")"
+
+  | TmRecord t -> 
+      let values_string = String.concat ", " (List.map (fun (label, field_ty) -> label ^ ": " ^ string_of_term field_ty) t) in
+    "record {" ^ values_string ^ "}"
+
+
 ;;
 
 let rec ldif l1 l2 = match l1 with
@@ -269,6 +284,12 @@ let rec free_vars tm = match tm with
   
   | TmProj (t, _) ->
       free_vars t
+  
+  | TmRecord fields ->
+        let free_in_field (label, term) =
+          free_vars term
+        in
+        List.flatten (List.map free_in_field (fields))
 ;;
 
 let rec fresh_name x l =
@@ -321,7 +342,12 @@ let rec subst x s tm = match tm with
 
   | TmProj (t, n) ->
     TmProj (subst x s t, n)
-    
+  
+    | TmRecord fields ->
+      let subst_field (label, term) =
+        (label, subst x s term)
+      in
+      TmRecord (List.map subst_field fields)
 ;;
 
 let rec isnumericval tm = match tm with
@@ -336,6 +362,9 @@ let rec isval tm = match tm with
   | TmAbs _ -> true
   | TmString _ -> true
   | TmTuple t when List.for_all isval t -> true
+  | TmRecord fields ->
+    let is_val_field (_, term) = isval term in
+    List.for_all is_val_field fields
 
   | t when isnumericval t -> true
   | _ -> false
@@ -455,7 +484,14 @@ let rec eval1 tm = match tm with
     TmTuple eval_t
   | TmProj (TmTuple t, pos) when List.length t > pos ->
       List.nth t pos
-
+  
+  | TmRecord fields ->
+        let eval_field (label, term) =
+          let term' = eval1 term in
+          (label, term')
+        in
+        let eval_fields = List.map eval_field fields in
+        TmRecord eval_fields
   | _ ->
       raise NoRuleApplies
 ;;

@@ -27,6 +27,9 @@
 %token RBRACK
 %token COMMA
 
+%token LBRACE
+%token RBRACE
+
 %token LPAREN
 %token RPAREN
 %token DOT
@@ -69,10 +72,24 @@ term :
         { TmLetIn ($2, $4, $6) }
     | LETREC IDV COLON ty EQ term IN term
         { TmLetIn ($2, TmFix (TmAbs ($2, $4, $6)), $8) }
-    | LBRACK list RBRACK
+    | LBRACE list RBRACE
         {TmTuple ($2)}
     | term DOT INTV
         {TmProj ($1, $3)}
+    | LBRACE record RBRACE
+        {TmRecord ($2)}
+
+record :
+    /* Manejar el caso de una lista vacía */
+    | 
+        { [] }
+    /* Manejar un solo campo en el registro */
+    | IDV EQ term
+        { [($1, $3)] }
+    /* Manejar múltiples campos en el registro */
+    | IDV EQ term COMMA record
+        { ($1, $3) :: $5 }
+        
 list :
     /* Manejar el caso de una lista vacía */
     | 
@@ -83,6 +100,7 @@ list :
     /* Manejar una lista con múltiples términos separados por comas */
     | term COMMA list
         { $1 :: $3 }
+
 appTerm :
     atomicTerm
         { $1 }
@@ -131,4 +149,5 @@ atomicTy :
         { TyNat }
     | STRING
         { TyString }
+
 

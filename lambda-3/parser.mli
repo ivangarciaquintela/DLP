@@ -19,6 +19,8 @@ type token =
   | LBRACK
   | RBRACK
   | COMMA
+  | LBRACE
+  | RBRACE
   | LPAREN
   | RPAREN
   | DOT

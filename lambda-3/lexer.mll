@@ -32,6 +32,10 @@ rule token = parse
   | ']'         { RBRACK }
   | ','         { COMMA }
 
+  (*braces registros*)
+  | '{'         { LBRACE }
+  | '}'         { RBRACE }
+
   | '.'         { DOT }
   | '='         { EQ }
   | ':'         { COLON }

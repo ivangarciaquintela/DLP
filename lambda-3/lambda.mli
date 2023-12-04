@@ -5,6 +5,8 @@ type ty =
   | TyArr of ty * ty
   | TyString
   | TyTuple of ty list
+  | TyRecord of (string * ty) list
+
 ;;
 
 type context =
@@ -29,7 +31,7 @@ type term =
   | TmFix of term
   | TmTuple of term list
   | TmProj of term * int
-
+  | TmRecord of (string * term) list
 ;;
 
 type command =
