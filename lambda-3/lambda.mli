@@ -6,6 +6,7 @@ type ty =
   | TyString
   | TyTuple of ty list
   | TyRecord of (string * ty) list
+  | TyList of ty
 
 ;;
 
@@ -32,6 +33,7 @@ type term =
   | TmTuple of term list
   | TmProj of term * int
   | TmRecord of (string * term) list
+  | TmList of term list
 ;;
 
 type command =

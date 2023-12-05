@@ -1,6 +1,9 @@
-# PRACTICA DLP
-## Mateo Amado Ares, Iván García Quintela
 
+# PRACTICA DLP
+#### Mateo Amado Ares, Iván García Quintela
+
+
+### Tecnichal Manual
 1. Improvements on the declaration of lambda functions:
 
     1. Recognition of multi-line exppressions:
@@ -136,8 +139,121 @@
                 let s' = eval1 s in
                 TmStrlen (s')
     
-    4. Tuplas
-                
-        Empty tuples are not permited.
+    4. Tuples and Projections
 
+        lambda.ml
         
+            ty:         | TyTuple of ty list
+
+            term:       | TmTuple of term list
+                        | TmProj of term * int
+
+            string_of_ty:  | TyTuple tyL ->
+                            let sFdL = List.map string_of_ty tyL in
+                             "(" ^ (String.concat ", " sFdL) ^ ")"
+
+            typeof:     | TmTuple t -> TyTuple (List.map (typeof ctx) t)
+
+                        | TmProj (t, n) ->
+                         let tyT = typeof ctx t in
+                        (match tyT with
+                        | TyTuple tyL ->
+                            (match List.nth_opt tyL n with
+                           | Some ty -> ty 
+                            | None -> raise (Type_error "Projection position out of bounds"))
+                            | _ ->
+          raise (Type_error "Cant apply projection to non-tuple type"))
+            string_of_term:     | TmTuple t -> 
+                                let values_string = String.concat ", " (List.map string_of_term t) in
+                                "tuple(" ^ values_string ^ ")"
+    
+                                | TmProj (t,pos) ->
+                                "proj(" ^ string_of_term t ^ ", " ^ string_of_int pos ^ ")"
+
+            free_vars:      | TmTuple t -> 
+                            List.fold_left (fun acc term -> lunion acc (free_vars term)) [] t
+
+                            | TmProj (t, _) ->
+                            free_vars t
+
+            subst:          | TmTuple t -> TmTuple (List.map (subst x s) t)
+
+                            | TmProj (t, n) ->
+                            TmProj (subst x s t, n)
+
+            isVal:          | TmTuple t when List.for_all isval t -> true
+
+            eval1:          |TmTuple t ->
+                            let eval_t = List.map eval1 t in
+                            TmTuple eval_t
+
+                            | TmProj (TmTuple t, pos) when List.length t > pos ->
+                            List.nth t pos
+        
+        lambda.mli
+
+                    | TmTuple of term list
+                    | TmProj of term * int
+
+        parser.mly
+
+                    | COMMA
+                    | LPAREN
+                    | RPAREN
+                
+        lexer.mll
+
+                    | '['         { LBRACK }
+                    | ']'         { RBRACK }
+                    | ','         { COMMA }
+    5. Records
+
+    6. Lists
+
+        en lambda.ml
+
+                ty:   | TyList of ty
+                string_of_ty:   | TyList ty ->
+                                "List " ^ (string_of_ty ty)
+
+                term:   | TmIsNul of ty * term
+                        | TmHead of ty * term
+                        | TmTail of ty * term
+
+                string_of_term:   | TmList t -> 
+                                let values_string = String.concat "; " (List.map string_of_term t) in
+                                "list[" ^ values_string ^ "]"
+                
+                free_bars:  | TmIsNul (_, t1) ->
+                                free_vars t1
+                            | TmHead (_, t1) ->
+                                free_vars t1
+                            | TmTail (_, t1) ->
+                                free_vars t1
+                
+                eval1:   | TmIsNul (_, TmNul _) ->
+                        TmTrue
+                        | TmIsNul (ty, t1) ->
+                        let t1' = eval1 vctx t1 in
+                        TmIsNul (ty, t1')
+
+                        | TmHead (ty, t1) ->
+                            let t1' = eval1 vctx t1 in
+                        TmHead (ty, t1')
+
+                        | TmTail (ty, t1) ->
+                        let t1' = eval1 vctx t1 in
+                        TmTail (ty, t1')
+        en lambda.mli
+
+                ty:   | TyList of ty
+
+                term:   | TmIsNil of ty * term
+                        | TmHead of ty * term
+                        | TmTail of ty * term
+
+### User Manual
+    
+    compile program with make and run with ledit ./top
+
+Examples:

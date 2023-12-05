@@ -78,6 +78,8 @@ term :
         {TmProj ($1, $3)}
     | LBRACE record RBRACE
         {TmRecord ($2)}
+    | LBRACK list RBRACK
+        {TmList ($2)}
 
 record :
     /* Manejar el caso de una lista vacía */
