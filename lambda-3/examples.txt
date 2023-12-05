@@ -31,7 +31,16 @@ in
 sum 21 34;;
 
 #Tuplas
-[3,2];;
-[3,"hola"];;
-[true, "hola"];;
-x = [3, true];;
+{3,2};;
+{3,"hola"};;
+{true, "hola"};;
+x = {3, true};;
+x = {3, true,"hola"};;
+x.0;;
+x.1;;
+x.3;;
+
+#Records
+{val1 = 1, val2 = {2,1}, val3 = true , val4 = "hola"};;
+x = {val1 = 1, val2 = {2,1}, val3 = true , val4 = "hola"};;
+ 

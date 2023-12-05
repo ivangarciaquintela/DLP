@@ -78,6 +78,9 @@ term :
         {TmProj ($1, $3)}
     | LBRACE record RBRACE
         {TmRecord ($2)}
+    | term DOT IDV
+        {TmProjR ($1, $3)}
+        
     | LBRACK list RBRACK
         {TmList ($2)}
 

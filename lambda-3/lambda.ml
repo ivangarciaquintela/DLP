@@ -36,6 +36,7 @@ type term =
   | TmProj of term * int
   | TmRecord of (string * term) list
   | TmList of term list
+  | TmProjR of term * string
 
 ;;
 
@@ -184,7 +185,14 @@ let rec typeof ctx tm = match tm with
           raise (Type_error "Cant apply projection to non-tuple type"))
   
   | TmRecord l -> TyRecord (List.map (fun (s,t) -> (s, typeof ctx t)) l)
-
+  
+  | TmProjR (t, label) ->
+    (match typeof ctx t with
+     | TyRecord fields ->
+       (try List.assoc label fields with
+        | Not_found -> raise (Type_error ("Label '" ^ label ^ "' not found in record")))
+     | _ -> raise (Type_error "Projection can only be applied to record types"))
+  
   | TmList t ->
     let types = List.map (typeof ctx) t in
     match types with
@@ -247,6 +255,9 @@ let rec string_of_term = function
   | TmRecord t -> 
       let values_string = String.concat ", " (List.map (fun (label, field_ty) -> label ^ ": " ^ string_of_term field_ty) t) in
     "record {" ^ values_string ^ "}"
+  
+  | TmProjR (t, label) ->
+      string_of_term t ^ "." ^ label
 
   | TmList t -> 
       let values_string = String.concat ", " (List.map string_of_term t) in
@@ -306,6 +317,10 @@ let rec free_vars tm = match tm with
           free_vars term
         in
         List.flatten (List.map free_in_field (fields))
+  
+  | TmProjR (t, _) ->
+      free_vars t
+
   | TmList t -> 
     List.fold_left (fun acc term -> lunion acc (free_vars term)) [] t
   
@@ -362,12 +377,15 @@ let rec subst x s tm = match tm with
   | TmProj (t, n) ->
     TmProj (subst x s t, n)
   
-    | TmRecord fields ->
+  | TmRecord fields ->
       let subst_field (label, term) =
         (label, subst x s term)
       in
       TmRecord (List.map subst_field fields)
   
+  | TmProjR (t, label) ->
+      TmProjR (subst x s t, label)
+
   | TmList t -> TmList (List.map (subst x s) t)
 
     ;;
@@ -387,6 +405,7 @@ let rec isval tm = match tm with
   | TmRecord fields ->
     let is_val_field (_, term) = isval term in
     List.for_all is_val_field fields
+  | TmProjR (t, _) when isval t -> true
   | TmList t when List.for_all isval t -> true
   | t when isnumericval t -> true
   | _ -> false
@@ -515,6 +534,12 @@ let rec eval1 tm = match tm with
         in
         let eval_fields = List.map eval_field fields in
         TmRecord eval_fields
+  | TmProjR (TmRecord fields, label) ->
+    (try List.assoc label fields with
+      | Not_found -> raise NoRuleApplies)
+  | TmProjR (t, label) when isval t ->
+      let t' = eval1 t in
+        TmProjR (t', label)
   (* E-List *)
   |TmList t ->
     let eval_t = List.map eval1 t in

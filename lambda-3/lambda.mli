@@ -34,6 +34,7 @@ type term =
   | TmProj of term * int
   | TmRecord of (string * term) list
   | TmList of term list
+  | TmProjR of term * string
 ;;
 
 type command =
