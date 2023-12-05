@@ -33,8 +33,13 @@ type term =
   | TmTuple of term list
   | TmProj of term * int
   | TmRecord of (string * term) list
-  | TmList of term list
   | TmProjR of term * string
+  (* Lists *)
+  | TmNil of ty
+  | TmCons of ty * term * term
+  | TmIsNil of ty * term
+  | TmHead of ty * term
+  | TmTail of ty * term
 ;;
 
 type command =

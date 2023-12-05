@@ -21,6 +21,12 @@ type token =
   | COMMA
   | LBRACE
   | RBRACE
+  | LIST
+  | NIL
+  | CONS
+  | ISNIL
+  | HEAD
+  | TAIL
   | LPAREN
   | RPAREN
   | DOT

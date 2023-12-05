@@ -43,4 +43,31 @@ x.3;;
 #Records
 {val1 = 1, val2 = {2,1}, val3 = true , val4 = "hola"};;
 x = {val1 = 1, val2 = {2,1}, val3 = true , val4 = "hola"};;
- 
+
+#Listas
+
+Nat.nil;;
+id = L x:Nat. x;;
+a=1;;
+lista = Nat.nil ;;
+lista = Nat.cons 1 lista;;
+lista =  (Nat.cons (id 1) (Nat.cons (id 2) (Nat.cons (id a) (Nat.nil))));;
+Nat.head lista;;
+Nat.tail lista;;
+letrec len : (Nat list) -> Nat = lambda l : Nat list. if (Nat.isnil l) then 0 else (succ (len (Nat.tail l)))
+in len lista;;
+lst = Nat.cons 1 (Nat.cons 2 (Nat.cons 3 (Nat.cons 4 (Nat.nil))));;
+
+#Lista de Bool 
+lstBool = Bool.nil;;
+lstBool = Bool.cons true lstBool;;
+Bool.cons true (Bool.nil);;
+
+lstB = Bool.nil;;
+lstB = Bool.cons true lstB;;       
+Bool.tail lstB;;
+Bool.head lstB;;
+
+
+#Lista de String
+lstring = String.nil;;

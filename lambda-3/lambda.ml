@@ -35,9 +35,14 @@ type term =
   | TmTuple of term list
   | TmProj of term * int
   | TmRecord of (string * term) list
-  | TmList of term list
   | TmProjR of term * string
 
+  (* Lists *)
+  | TmNil of ty
+  | TmCons of ty * term * term
+  | TmIsNil of ty * term
+  | TmHead of ty * term
+  | TmTail of ty * term
 ;;
 
 type command =
@@ -192,16 +197,32 @@ let rec typeof ctx tm = match tm with
        (try List.assoc label fields with
         | Not_found -> raise (Type_error ("Label '" ^ label ^ "' not found in record")))
      | _ -> raise (Type_error "Projection can only be applied to record types"))
+
+  (* T-Nil *)
+  | TmNil ty -> TyList ty
   
-  | TmList t ->
-    let types = List.map (typeof ctx) t in
-    match types with
-    | [] -> raise (Type_error ("Empty list"))
-    | first_type :: _ ->
-      if List.for_all ((=) first_type) types then
-        TyList first_type
-      else
-        raise (Type_error "List elements are of different types")
+  (* T-Cons *)
+  | TmCons (ty,h,t) ->
+      let tyTh = typeof ctx h in
+        let tyTt = typeof ctx t in
+          if (tyTh = ty) && (tyTt = TyList(ty)) then TyList(ty)
+          else raise (Type_error "elements of list have different types")
+  
+  (* T-IsNil *)
+  | TmIsNil (ty,t) -> 
+    if typeof ctx t = TyList(ty) then TyBool
+    else raise (Type_error ("argument of isempty is not a " ^ (string_of_ty ty) ^ " list"))
+ 
+  (* T-Head *)    
+  | TmHead (ty,t) ->     
+    if typeof ctx t = TyList(ty) then ty
+    else raise (Type_error ("argument of head is not a " ^ (string_of_ty ty) ^ " list"))
+    
+  (* T-Tail *)    
+  | TmTail (ty,t) -> 
+    if typeof ctx t = TyList(ty) then TyList(ty)
+    else raise (Type_error ("argument of tail is not a " ^ (string_of_ty ty) ^ " list"))
+
 ;;
 
 
@@ -259,9 +280,17 @@ let rec string_of_term = function
   | TmProjR (t, label) ->
       string_of_term t ^ "." ^ label
 
-  | TmList t -> 
-      let values_string = String.concat ", " (List.map string_of_term t) in
-    "list (" ^ values_string ^ ")"
+
+  | TmNil ty -> 
+      "nil[" ^ string_of_ty ty ^ "]" 
+| TmCons (ty,h,t) -> 
+      "cons[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term h ^ ") (" ^ (string_of_term t) ^ ")"
+| TmIsNil (ty,t) -> 
+      "isnil[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
+| TmHead (ty,t) -> 
+      "head[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
+| TmTail (ty,t) -> 
+      "tail[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
 ;;
 
 let rec ldif l1 l2 = match l1 with
@@ -321,8 +350,17 @@ let rec free_vars tm = match tm with
   | TmProjR (t, _) ->
       free_vars t
 
-  | TmList t -> 
-    List.fold_left (fun acc term -> lunion acc (free_vars term)) [] t
+  
+  | TmNil ty -> 
+      []
+  | TmCons (ty,t1,t2) -> 
+      lunion (free_vars t1) (free_vars t2)
+  | TmIsNil (ty,t) ->
+      free_vars t
+  | TmHead (ty,t) ->
+      free_vars t
+  | TmTail (ty,t) ->
+      free_vars t
   
 ;;
 
@@ -385,10 +423,17 @@ let rec subst x s tm = match tm with
   
   | TmProjR (t, label) ->
       TmProjR (subst x s t, label)
-
-  | TmList t -> TmList (List.map (subst x s) t)
-
-    ;;
+      | TmNil ty -> 
+        tm
+    | TmCons (ty,t1,t2) -> 
+        TmCons (ty, (subst  x s t1), (subst x s t2))
+    | TmIsNil (ty,t) ->
+        TmIsNil (ty, (subst  x s t))
+    | TmHead (ty,t) ->
+        TmHead (ty, (subst  x s t))
+    | TmTail (ty,t) ->
+        TmTail (ty, (subst x s t))
+;;
 
 let rec isnumericval tm = match tm with
     TmZero -> true
@@ -406,7 +451,8 @@ let rec isval tm = match tm with
     let is_val_field (_, term) = isval term in
     List.for_all is_val_field fields
   | TmProjR (t, _) when isval t -> true
-  | TmList t when List.for_all isval t -> true
+  | TmNil _ -> true
+  | TmCons(_,h,t) -> (&&) (isval h) (isval t)
   | t when isnumericval t -> true
   | _ -> false
 ;;
@@ -540,10 +586,42 @@ let rec eval1 tm = match tm with
   | TmProjR (t, label) when isval t ->
       let t' = eval1 t in
         TmProjR (t', label)
-  (* E-List *)
-  |TmList t ->
-    let eval_t = List.map eval1 t in
-    TmList eval_t
+
+    (* E-Cons2 *)
+    | TmCons(ty,h,t) when isval h -> 
+      TmCons(ty,h,(eval1 t)) 
+  
+  (* E-Cons1 *)
+  | TmCons(ty,h,t) -> 
+      TmCons(ty,(eval1 h),t)
+  
+  (* E-IsNilNil *)
+  | TmIsNil(ty,TmNil(_)) -> 
+      TmTrue  
+  
+  (* E-IsNilCons *)
+  | TmIsNil(ty,TmCons(_,_,_)) -> 
+      TmFalse
+  
+  (* E-IsNil *)
+  | TmIsNil(ty,t) -> 
+      TmIsNil(ty,eval1 t)
+  
+  (* E-HeadCons *)
+  | TmHead(ty,TmCons(_,h,_)) -> 
+      h
+  
+  (* E-Head *)
+  | TmHead(ty,t) -> 
+      TmHead(ty,eval1 t)
+  
+  (* E-TailCons *)
+  | TmTail(ty,TmCons(_,_,t)) -> 
+      t
+  
+  (* E-Tail *)
+  | TmTail(ty,t) -> 
+      TmTail(ty,eval1 t)
   
   | _ ->
       raise NoRuleApplies

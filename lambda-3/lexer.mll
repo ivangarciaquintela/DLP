@@ -36,6 +36,13 @@ rule token = parse
   | '{'         { LBRACE }
   | '}'         { RBRACE }
 
+  | "list"      { LIST }
+  | "nil"       { NIL }
+  | "cons"      { CONS }
+  | "isnil"     { ISNIL }
+  | "head"      { HEAD }
+  | "tail"      { TAIL }
+
   | '.'         { DOT }
   | '='         { EQ }
   | ':'         { COLON }

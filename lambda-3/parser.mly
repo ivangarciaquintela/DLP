@@ -30,6 +30,14 @@
 %token LBRACE
 %token RBRACE
 
+%token LIST
+
+%token NIL
+%token CONS
+%token ISNIL
+%token HEAD
+%token TAIL
+
 %token LPAREN
 %token RPAREN
 %token DOT
@@ -81,8 +89,16 @@ term :
     | term DOT IDV
         {TmProjR ($1, $3)}
         
-    | LBRACK list RBRACK
-        {TmList ($2)}
+    | ty DOT NIL
+      { TmNil $1 }
+    | ty DOT CONS atomicTerm atomicTerm
+      { TmCons ($1, $4, $5) }
+    | ty DOT ISNIL atomicTerm
+      { TmIsNil ($1, $4)}
+    | ty DOT HEAD atomicTerm
+      { TmHead ($1, $4)}
+    | ty DOT TAIL atomicTerm
+      { TmTail ($1, $4)}
 
 record :
     /* Manejar el caso de una lista vacía */
@@ -144,6 +160,8 @@ ty :
         { $1 }
     | atomicTy ARROW ty
         { TyArr ($1, $3) }
+    | atomicTy LIST 
+        {TyList $1}
 
 atomicTy :
     LPAREN ty RPAREN
