@@ -208,6 +208,76 @@
                     | ','         { COMMA }
     5. Records
 
+        en lambda.ml y lambda.mli
+
+                ty: | TyRecord of (string * ty) list
+                term:   | TmRecord of (string * term) list
+                        | TmProjR of term * string
+
+        solo en lambda.ml
+
+                string_of_ty:   | TyRecord t -> 
+                                    let sfdL = List.map (fun (label, field_ty) -> label ^ ": " ^ string_of_ty field_ty) t 
+                                     in "(" ^ (String.concat ", " sfdL) ^ ")"
+
+                typeof:     | TmRecord l -> TyRecord (List.map (fun (s,t) -> (s,    typeof ctx t)) l)
+  
+                            | TmProjR (t, label) ->
+                            (match typeof ctx t with
+                            | TyRecord fields ->
+                           (try List.assoc label fields with
+                            | Not_found -> raise (Type_error ("Label '" ^ label ^ "' not found in record")))
+                            | _ -> raise (Type_error "Projection can only be applied to record types"))
+
+                string_of_term:   | TmRecord t -> 
+                                    let values_string = String.concat ", " (List.map (fun (label, field_ty) -> 
+                                    label ^ ": " ^ string_of_term field_ty) t) in
+                                    "record {" ^ values_string ^ "}"
+  
+                                    | TmProjR (t, label) -> string_of_term t ^ "." ^ label
+
+                free_vars:   | TmRecord fields ->
+                            let free_in_field (label, term) =
+                                free_vars term
+                            in List.flatten (List.map free_in_field (fields))
+  
+                            | TmProjR (t, _) ->
+                                free_vars t
+
+                subst:     | TmRecord fields ->
+                            let subst_field (label, term) =
+                            (label, subst x s term)
+                            in TmRecord (List.map subst_field fields)
+  
+                            | TmProjR (t, label) ->
+                            TmProjR (subst x s t, label)
+
+                isval:      | TmRecord fields ->
+                            let is_val_field (_, term) = isval term in
+                            List.for_all is_val_field fields
+                            | TmProjR (t, _) when isval t -> true 
+                
+                eval1:      | TmRecord fields ->
+                                let eval_field (label, term) =
+                                let term' = eval1 term in (label, term')
+                                in let eval_fields = List.map eval_field fields in
+                                TmRecord eval_fields
+                            | TmProjR (TmRecord fields, label) ->
+                                (try List.assoc label fields with
+                            | Not_found -> raise NoRuleApplies)
+                            | TmProjR (t, label) when isval t ->
+                                let t' = eval1 t in
+                                TmProjR (t', label)
+
+        en parser.mly
+
+                appterm:
+                            | LBRACE record RBRACE
+                                {TmRecord ($2)}
+                            | term DOT IDV
+                                {TmProjR ($1, $3)}
+
+
     6. Lists
 
         en lambda.ml
@@ -256,4 +326,5 @@
     
     compile program with make and run with ledit ./top
 
-Examples:
+Examples en examples.txt
+
