@@ -198,27 +198,22 @@ let rec typeof ctx tm = match tm with
         | Not_found -> raise (Type_error ("Label '" ^ label ^ "' not found in record")))
      | _ -> raise (Type_error "Projection can only be applied to record types"))
 
-  (* T-Nil *)
   | TmNil ty -> TyList ty
   
-  (* T-Cons *)
   | TmCons (ty,h,t) ->
       let tyTh = typeof ctx h in
         let tyTt = typeof ctx t in
           if (tyTh = ty) && (tyTt = TyList(ty)) then TyList(ty)
           else raise (Type_error "elements of list have different types")
   
-  (* T-IsNil *)
   | TmIsNil (ty,t) -> 
     if typeof ctx t = TyList(ty) then TyBool
     else raise (Type_error ("argument of isempty is not a " ^ (string_of_ty ty) ^ " list"))
  
-  (* T-Head *)    
   | TmHead (ty,t) ->     
     if typeof ctx t = TyList(ty) then ty
     else raise (Type_error ("argument of head is not a " ^ (string_of_ty ty) ^ " list"))
     
-  (* T-Tail *)    
   | TmTail (ty,t) -> 
     if typeof ctx t = TyList(ty) then TyList(ty)
     else raise (Type_error ("argument of tail is not a " ^ (string_of_ty ty) ^ " list"))
@@ -283,13 +278,13 @@ let rec string_of_term = function
 
   | TmNil ty -> 
       "nil[" ^ string_of_ty ty ^ "]" 
-| TmCons (ty,h,t) -> 
+  | TmCons (ty,h,t) -> 
       "cons[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term h ^ ") (" ^ (string_of_term t) ^ ")"
-| TmIsNil (ty,t) -> 
+  | TmIsNil (ty,t) -> 
       "isnil[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
-| TmHead (ty,t) -> 
+  | TmHead (ty,t) -> 
       "head[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
-| TmTail (ty,t) -> 
+  | TmTail (ty,t) -> 
       "tail[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
 ;;
 
@@ -423,16 +418,16 @@ let rec subst x s tm = match tm with
   
   | TmProjR (t, label) ->
       TmProjR (subst x s t, label)
-      | TmNil ty -> 
+  | TmNil ty -> 
         tm
-    | TmCons (ty,t1,t2) -> 
-        TmCons (ty, (subst  x s t1), (subst x s t2))
-    | TmIsNil (ty,t) ->
-        TmIsNil (ty, (subst  x s t))
-    | TmHead (ty,t) ->
-        TmHead (ty, (subst  x s t))
-    | TmTail (ty,t) ->
-        TmTail (ty, (subst x s t))
+  | TmCons (ty,t1,t2) -> 
+      TmCons (ty, (subst  x s t1), (subst x s t2))
+  | TmIsNil (ty,t) ->
+      TmIsNil (ty, (subst  x s t))
+  | TmHead (ty,t) ->
+      TmHead (ty, (subst  x s t))
+  | TmTail (ty,t) ->
+      TmTail (ty, (subst x s t))
 ;;
 
 let rec isnumericval tm = match tm with
@@ -587,39 +582,22 @@ let rec eval1 tm = match tm with
       let t' = eval1 t in
         TmProjR (t', label)
 
-    (* E-Cons2 *)
-    | TmCons(ty,h,t) when isval h -> 
+  | TmCons(ty,h,t) when isval h -> 
       TmCons(ty,h,(eval1 t)) 
-  
-  (* E-Cons1 *)
   | TmCons(ty,h,t) -> 
       TmCons(ty,(eval1 h),t)
-  
-  (* E-IsNilNil *)
   | TmIsNil(ty,TmNil(_)) -> 
       TmTrue  
-  
-  (* E-IsNilCons *)
   | TmIsNil(ty,TmCons(_,_,_)) -> 
       TmFalse
-  
-  (* E-IsNil *)
   | TmIsNil(ty,t) -> 
       TmIsNil(ty,eval1 t)
-  
-  (* E-HeadCons *)
   | TmHead(ty,TmCons(_,h,_)) -> 
       h
-  
-  (* E-Head *)
   | TmHead(ty,t) -> 
       TmHead(ty,eval1 t)
-  
-  (* E-TailCons *)
   | TmTail(ty,TmCons(_,_,t)) -> 
       t
-  
-  (* E-Tail *)
   | TmTail(ty,t) -> 
       TmTail(ty,eval1 t)
   

@@ -39,7 +39,7 @@
                 ```
                 We then call process line from the top_level_loop() function.
 
-            * lexer.ml, lambda.mli, parser.mli, parser.mly
+            * lexer.mll, lambda.ml, parser.mly
                 
                 Added support for the SEMICOLON token.
                 ```
@@ -47,29 +47,40 @@
                 
                 %token SEMICOLON
                 ```
-            * Examples
-            
-                We can now run an expression on many lines:
 
-                    true
-                    ;;
-
-                    if false 
-                    then true 
-                    else false;;
 
     2. "pretty-printer" :
         - We modified the following files:
             * lambda.ml
-            ![Alt text](img/prettyprinterlambda.png)
-                Se eliminaron los paréntesis redundantes
-
-
-            * main.ml
+            ![Changes](img/prettyprinterlambda.png)
                 
 2. Extensions of the lambda-calculus language:
 
     1. Internal fixed point combiner
+
+        lambda.ml
+
+                | TmFix t1 ->
+                    let tyT1 = typeof ctx t1 in
+                    (match tyT1 with
+                    TyArr (tyT11, tyT12) ->
+                    if tyT11 = tyT12 then tyT12
+                    else raise(Type_error "result of body not compatible with domain")
+                    | _ -> raise (Type_error "arrow type expected")
+                    )
+
+
+                  |TmFix (TmAbs (x, _, t12)) ->
+                    subst x tm t12
+
+                | TmFix t1 ->
+                    let t1' = eval1 t1 in
+                    TmFix t1'
+        
+        lexer.mll
+
+                    | "letrec" { LETREC }
+
 
     2. Global definition context
         * Using a Hashtbl module, with functional behaviour.
@@ -108,6 +119,7 @@
                 | TmStrlen of term
 
         lexer.mll
+
                 | "strlen"    { CONCAT }
                 | "concat"    { CONCAT }
                 | "String"    { STRING }
@@ -162,7 +174,7 @@
                            | Some ty -> ty 
                             | None -> raise (Type_error "Projection position out of bounds"))
                             | _ ->
-          raise (Type_error "Cant apply projection to non-tuple type"))
+                            raise (Type_error "Cant apply projection to non-tuple type"))
             string_of_term:     | TmTuple t -> 
                                 let values_string = String.concat ", " (List.map string_of_term t) in
                                 "tuple(" ^ values_string ^ ")"
@@ -286,45 +298,108 @@
                 string_of_ty:   | TyList ty ->
                                 "List " ^ (string_of_ty ty)
 
-                term:   | TmIsNul of ty * term
+                term:   | TmNil of ty
+                        | TmCons of ty * term * term
+                        | TmIsNil of ty * term
                         | TmHead of ty * term
                         | TmTail of ty * term
 
-                string_of_term:   | TmList t -> 
-                                let values_string = String.concat "; " (List.map string_of_term t) in
-                                "list[" ^ values_string ^ "]"
-                
-                free_bars:  | TmIsNul (_, t1) ->
-                                free_vars t1
-                            | TmHead (_, t1) ->
-                                free_vars t1
-                            | TmTail (_, t1) ->
-                                free_vars t1
-                
-                eval1:   | TmIsNul (_, TmNul _) ->
-                        TmTrue
-                        | TmIsNul (ty, t1) ->
-                        let t1' = eval1 vctx t1 in
-                        TmIsNul (ty, t1')
+                typeof:     | TmNil ty -> TyList ty
+  
+                            | TmCons (ty,h,t) ->
+                              let tyTh = typeof ctx h in
+                                let tyTt = typeof ctx t in
+                                  if (tyTh = ty) && (tyTt = TyList(ty)) then TyList(ty)
+                                  else raise (Type_error "elements of list have different types")
+  
+                            | TmIsNil (ty,t) -> 
+                              if typeof ctx t = TyList(ty) then TyBool
+                              else raise (Type_error ("argument of isempty is not a " ^ (string_of_ty ty) ^ " list"))
+ 
+                            | TmHead (ty,t) ->     
+                              if typeof ctx t = TyList(ty) then ty
+                              else raise (Type_error ("argument of head is not a " ^ (string_of_ty ty) ^ " list"))
+    
+                            | TmTail (ty,t) -> 
+                              if typeof ctx t = TyList(ty) then TyList(ty)
+                              else raise (Type_error ("argument of tail is not a " ^ (string_of_ty ty) ^ " list"))
 
-                        | TmHead (ty, t1) ->
-                            let t1' = eval1 vctx t1 in
-                        TmHead (ty, t1')
 
-                        | TmTail (ty, t1) ->
-                        let t1' = eval1 vctx t1 in
-                        TmTail (ty, t1')
-        en lambda.mli
+                string_of_term:     | TmNil ty -> 
+                                        "nil[" ^ string_of_ty ty ^ "]" 
+                                    | TmCons (ty,h,t) -> 
+                                          "cons[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term h ^ ") ("^(string_of_term t)^")"
+                                    | TmIsNil (ty,t) -> 
+                                          "isnil[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
+                                    | TmHead (ty,t) -> 
+                                          "head[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
+                                    | TmTail (ty,t) -> 
+                                          "tail[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
+                
+                free_bars:          | TmNil ty -> 
+                                        []
+                                    | TmCons (ty,t1,t2) -> 
+                                        lunion (free_vars t1) (free_vars t2)
+                                    | TmIsNil (ty,t) ->
+                                        free_vars t
+                                    | TmHead (ty,t) ->
+                                        free_vars t
+                                    | TmTail (ty,t) ->
+                                        free_vars t
+
+                subst:              | TmNil ty -> 
+                                        tm
+                                    | TmCons (ty,t1,t2) -> 
+                                        TmCons (ty, (subst  x s t1), (subst x s t2))
+                                    | TmIsNil (ty,t) ->
+                                        TmIsNil (ty, (subst  x s t))
+                                    | TmHead (ty,t) ->
+                                        TmHead (ty, (subst  x s t))
+                                    | TmTail (ty,t) ->
+                                       TmTail (ty, (subst x s t))
+                
+                isval:              | TmNil _ -> true
+                                    | TmCons(_,h,t) -> (&&) (isval h) (isval t)
+
+                eval1:              
+                                    | TmCons(ty,h,t) when isval h -> 
+                                        TmCons(ty,h,(eval1 t)) 
+                                    | TmCons(ty,h,t) -> 
+                                        TmCons(ty,(eval1 h),t)
+                                    | TmIsNil(ty,TmNil(_)) -> 
+                                        TmTrue  
+                                    | TmIsNil(ty,TmCons(_,_,_)) -> 
+                                        TmFalse
+                                    | TmIsNil(ty,t) -> 
+                                        TmIsNil(ty,eval1 t)
+                                    | TmHead(ty,TmCons(_,h,_)) -> 
+                                        h
+                                    | TmHead(ty,t) -> 
+                                        TmHead(ty,eval1 t)
+                                    | TmTail(ty,TmCons(_,_,t)) -> 
+                                        t
+                                    | TmTail(ty,t) -> 
+                                        TmTail(ty,eval1 t)
+
+
+
+        lambda.mli
 
                 ty:   | TyList of ty
 
-                term:   | TmIsNil of ty * term
-                        | TmHead of ty * term
-                        | TmTail of ty * term
+                term:    | TmNil of ty
+                         | TmCons of ty * term * term
+                         | TmIsNil of ty * term
+                         | TmHead of ty * term
+                         | TmTail of ty * term
+
+
+
+
 
 ### User Manual
     
     compile program with make and run with ledit ./top
 
-Examples en examples.txt
+    Examples of expressions demonstrating the various capabilities in examples.txt
 

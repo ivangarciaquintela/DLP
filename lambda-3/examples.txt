@@ -17,18 +17,57 @@ let x = 5 in let id_nat = L x:Nat. x in id_nat x
 let fix = lambda f.(lambda x. f (lambda y. x x y)) (lambda x. f (lambda y. x x y)) in let sumaux = lambda f. (lambda n. (lambda m. if (iszero n) then m else succ (f (pred n) m))) in let sum = fix sumaux in sum 21 34
 let fix = lambda f.(lambda x. f (lambda y. x x y)) (lambda x. f (lambda y. x x y)) in let sumaux = lambda f. (lambda n. (lambda m. if (iszero n) then m else succ (f (pred n) m))) in let sum = fix sumaux in let prodaux = lambda f. (lambda n. (lambda m. if (iszero m) then 0 else sum n (f n (pred m)))) in let prod = fix prodaux in prod 12 5
 
+
+#Multi-line expressions:
+
+true
+;;
+
+if false 
+then true 
+else false;;
+
+
+#Fixed-point Combinator
+
+#sum:
+letrec sum : Nat -> Nat -> Nat =
+lambda n : Nat. lambda m : Nat. if iszero n then m else succ (sum (pred n) m) in
+sum 21 34;;
+
+#prod:
+letrec sum : Nat -> Nat -> Nat =                                      
+lambda n : Nat. lambda m : Nat. if iszero n then m else succ (sum (pred n) m) in
+letrec prod : Nat -> Nat -> Nat =
+lambda n : Nat. lambda m : Nat. if iszero n then 0 else sum (prod (pred n) m) m in
+prod 2 3;;
+
+#fib:
+letrec sum : Nat -> Nat -> Nat =                                      
+        lambda n : Nat. lambda m : Nat. if iszero n then m else succ (sum (pred n) m) in
+        letrec fib : Nat -> Nat =
+                lambda n : Nat. if iszero n then 0 else if iszero (pred n) then 1 else
+                sum (fib (pred (pred n))) (fib (pred n))
+                in fib 6;;
+
+#fact: (NO ACABADA)
+fact = letrec aux:Nat->Nat = L n:Nat.
+  if iszero n then 1
+  else
+    prod n (aux (pred n))
+in aux
+
+
+# Global Context:
+a=10;;
+a;;
+
+
+# String
 "a"
 concat "a" "b"
 strlen "aaa"
 
-# Suma
-letrec sum : Nat -> Nat -> Nat = lambda n : Nat. lambda m : Nat. if iszero n then m else succ (sum (pred n) m) in sum 21 34;;
-
-letrec sum : Nat -> Nat -> Nat = 
-lambda n : Nat. lambda m : Nat. if iszero n then m 
-else succ (sum (pred n) m) 
-in 
-sum 21 34;;
 
 #Tuplas
 {3,2};;
@@ -71,3 +110,42 @@ Bool.head lstB;;
 
 #Lista de String
 lstring = String.nil;;
+
+
+length = letrec aux:(List Nat)->(Nat->Nat) = L l:List Nat. L n:Nat.
+  if isnil[Nat] l then n else aux (tail[Nat] l) (succ n)
+in
+  L l:List Nat. aux l 0
+
+
+append = letrec aux:(List Nat)->((List Nat)->(List Nat)) =
+  L la:List Nat. L lb:List Nat.
+    if isnil[Nat] la
+    then lb
+    else cons[Nat] (head[Nat] la) (aux (tail[Nat] la) lb)
+in
+  aux
+
+
+map = letrec aux:(Nat->Nat)->((List Nat)->(List Nat)) =
+  L f:Nat->Nat. L l:List Nat.
+    if isnil[Nat] l
+    then l
+    else cons[Nat] (f (head[Nat] l)) (aux f (tail[Nat] l))
+in
+  aux
+
+
+
+
+letrec len : (Nat list) -> Nat = lambda l : Nat list. if (isnil[Nat] l) then 0 else (succ (len (tail[Nat] l)))
+in len lista;;
+lst = cons[Nat] 1 (cons[Nat] 2 (cons[Nat] 3 (cons[Nat] 4 (nil[Nat]))));;
+f = lambda x:Nat . succ x;;
+letrec map : (Nat list) -> (Nat -> Nat) -> Nat list =
+lambda lst: Nat list. lambda f: (Nat -> Nat). 
+        if (isnil[Nat] (tail[Nat] lst)) then
+                cons[Nat] (f (head[Nat] lst)) (nil[Nat])
+        else
+                cons[Nat] (f (head[Nat] lst)) (map (tail[Nat] lst) f)
+in map lst f;;
