@@ -35,6 +35,8 @@ type token =
   | ARROW
   | SEMICOLON
   | EOF
+  | LT
+  | GT
   | INTV of (int)
   | IDV of (string)
   | STRINGV of (string)

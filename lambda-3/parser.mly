@@ -47,6 +47,9 @@
 %token SEMICOLON
 %token EOF
 
+%token LT 
+%token GT
+
 %token <int> INTV
 %token <string> IDV
 %token <string> STRINGV
@@ -90,35 +93,29 @@ term :
         {TmProjR ($1, $3)}
         
     | ty DOT NIL
-      { TmNil $1 }
+        { TmNil $1 }
     | ty DOT CONS atomicTerm atomicTerm
-      { TmCons ($1, $4, $5) }
+        { TmCons ($1, $4, $5) }
     | ty DOT ISNIL atomicTerm
-      { TmIsNil ($1, $4)}
+        { TmIsNil ($1, $4)}
     | ty DOT HEAD atomicTerm
-      { TmHead ($1, $4)}
+        { TmHead ($1, $4)}
     | ty DOT TAIL atomicTerm
-      { TmTail ($1, $4)}
+        { TmTail ($1, $4)}
 
 record :
-    /* Manejar el caso de una lista vacía */
     | 
         { [] }
-    /* Manejar un solo campo en el registro */
     | IDV EQ term
         { [($1, $3)] }
-    /* Manejar múltiples campos en el registro */
     | IDV EQ term COMMA record
         { ($1, $3) :: $5 }
         
 list :
-    /* Manejar el caso de una lista vacía */
     | 
         { [] }
-    /* Manejar una lista con un solo término */
     | term
         { [$1] }
-    /* Manejar una lista con múltiples términos separados por comas */
     | term COMMA list
         { $1 :: $3 }
 
@@ -146,7 +143,6 @@ atomicTerm :
     | FALSE
         { TmFalse }
     | IDV
-      //{ TmVar $1 }
         { try find table $1 with Not_found -> TmVar ($1) }      
     | INTV
         { let rec f = function

@@ -9,7 +9,6 @@ type ty =
   | TyTuple of ty list
   | TyRecord of (string * ty) list
   | TyList of ty
-
 ;;
 
 type context =
@@ -36,13 +35,12 @@ type term =
   | TmProj of term * int
   | TmRecord of (string * term) list
   | TmProjR of term * string
-
-  (* Lists *)
   | TmNil of ty
   | TmCons of ty * term * term
   | TmIsNil of ty * term
   | TmHead of ty * term
   | TmTail of ty * term
+
 ;;
 
 type command =
@@ -87,7 +85,6 @@ let rec string_of_ty ty = match ty with
           "(" ^ (String.concat ", " sfdL) ^ ")"
   | TyList ty ->
           "List " ^ (string_of_ty ty)
-
 ;;
 
 exception Type_error of string
@@ -164,7 +161,6 @@ let rec typeof ctx tm = match tm with
       if typeof ctx t1 = TyString then TyNat
       else raise (Type_error "argument of strlen is not a string")
 
-
   | TmConcat (t1, t2) ->
       if typeof ctx t1= TyString && typeof ctx t2 = TyString then TyString
       else raise (Type_error "arguments of concat are not strings")
@@ -193,10 +189,10 @@ let rec typeof ctx tm = match tm with
   
   | TmProjR (t, label) ->
     (match typeof ctx t with
-     | TyRecord fields ->
-       (try List.assoc label fields with
+    | TyRecord fields ->
+        (try List.assoc label fields with
         | Not_found -> raise (Type_error ("Label '" ^ label ^ "' not found in record")))
-     | _ -> raise (Type_error "Projection can only be applied to record types"))
+    | _ -> raise (Type_error "Projection can only be applied to record types"))
 
   | TmNil ty -> TyList ty
   
@@ -209,7 +205,7 @@ let rec typeof ctx tm = match tm with
   | TmIsNil (ty,t) -> 
     if typeof ctx t = TyList(ty) then TyBool
     else raise (Type_error ("argument of isempty is not a " ^ (string_of_ty ty) ^ " list"))
- 
+
   | TmHead (ty,t) ->     
     if typeof ctx t = TyList(ty) then ty
     else raise (Type_error ("argument of head is not a " ^ (string_of_ty ty) ^ " list"))
@@ -271,10 +267,9 @@ let rec string_of_term = function
   | TmRecord t -> 
       let values_string = String.concat ", " (List.map (fun (label, field_ty) -> label ^ ": " ^ string_of_term field_ty) t) in
     "record {" ^ values_string ^ "}"
-  
+
   | TmProjR (t, label) ->
       string_of_term t ^ "." ^ label
-
 
   | TmNil ty -> 
       "nil[" ^ string_of_ty ty ^ "]" 
@@ -286,7 +281,7 @@ let rec string_of_term = function
       "head[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
   | TmTail (ty,t) -> 
       "tail[" ^ string_of_ty ty ^ "] " ^ "(" ^ string_of_term t ^ ")"
-;;
+  ;;
 
 let rec ldif l1 l2 = match l1 with
     [] -> []
@@ -325,7 +320,6 @@ let rec free_vars tm = match tm with
       []
   | TmStrlen t ->
       free_vars t
-      (*alomejor mal*)
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
   |TmFix t -> free_vars t
@@ -345,7 +339,6 @@ let rec free_vars tm = match tm with
   | TmProjR (t, _) ->
       free_vars t
 
-  
   | TmNil ty -> 
       []
   | TmCons (ty,t1,t2) -> 
@@ -356,7 +349,7 @@ let rec free_vars tm = match tm with
       free_vars t
   | TmTail (ty,t) ->
       free_vars t
-  
+
 ;;
 
 let rec fresh_name x l =
@@ -400,7 +393,6 @@ let rec subst x s tm = match tm with
       TmString st
   | TmStrlen t ->
       TmStrlen (subst x s t)
-            (*alomejor mal*)
   | TmConcat (t1, t2) ->
       TmConcat (subst x s t1, subst x s t2)
   | TmFix t -> TmFix (subst x s t)
@@ -600,7 +592,7 @@ let rec eval1 tm = match tm with
       t
   | TmTail(ty,t) -> 
       TmTail(ty,eval1 t)
-  
+
   | _ ->
       raise NoRuleApplies
 ;;

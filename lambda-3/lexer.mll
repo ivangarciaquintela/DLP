@@ -27,12 +27,10 @@ rule token = parse
   | '('         { LPAREN }
   | ')'         { RPAREN }
   
-  (*tuple brackets*)
   | '['         { LBRACK }
   | ']'         { RBRACK }
   | ','         { COMMA }
 
-  (*braces registros*)
   | '{'         { LBRACE }
   | '}'         { RBRACE }
 
@@ -48,6 +46,8 @@ rule token = parse
   | ':'         { COLON }
   | "->"        { ARROW }
   | ";;"        { SEMICOLON }
+  | ">"         { GT }
+  | "<"         { LT }
   | ['0'-'9']+  { INTV (int_of_string (Lexing.lexeme lexbuf)) }
   | ['a'-'z']['a'-'z' '_' '0'-'9']*  
                 { IDV (Lexing.lexeme lexbuf) }

@@ -1,4 +1,3 @@
-
 type ty =
     TyBool
   | TyNat
@@ -34,7 +33,6 @@ type term =
   | TmProj of term * int
   | TmRecord of (string * term) list
   | TmProjR of term * string
-  (* Lists *)
   | TmNil of ty
   | TmCons of ty * term * term
   | TmIsNil of ty * term
