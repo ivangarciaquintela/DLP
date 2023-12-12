@@ -52,7 +52,8 @@
     2. "pretty-printer" :
         - We modified the following files:
             * lambda.ml
-            ![Changes](img/prettyprinterlambda.png)
+                    
+                    We removed some parenthesis string_of_term and string_of_ty.
                 
 2. Extensions of the lambda-calculus language:
 
